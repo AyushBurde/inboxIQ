@@ -1,0 +1,9 @@
+flask
+flask-cors
+sqlalchemy
+pydantic
+python-multipart
+openai
+google-auth-oauthlib
+google-api-python-client
+beautifulsoup4
