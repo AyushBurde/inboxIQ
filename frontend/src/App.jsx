@@ -7,24 +7,20 @@ function App() {
   const [selectedMsg, setSelectedMsg] = useState(null)
   const [isLogged, setIsLogged] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
-  const [currentUser, setCurrentUser] = useState(null) // in a real app, we'd fetch actual user info
+  const [currentUser, setCurrentUser] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Check if we just logged in via URL callback
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('login') === 'success') {
-      setIsLogged(true);
-      const email = urlParams.get('email');
-      if (email) {
-        setCurrentUser(email);
-      } else {
-        setCurrentUser("user@example.com"); // fallback just in case
-      }
-      fetchMessages();
-      // Clean up URL
-      window.history.replaceState({}, document.title, "/");
+      setIsLogged(true)
+      const email = urlParams.get('email')
+      setCurrentUser(email || 'user@example.com')
+      fetchMessages()
+      window.history.replaceState({}, document.title, '/')
     }
-  }, []);
+  }, [])
 
   const fetchMessages = async () => {
     const data = await getMessages()
@@ -32,25 +28,43 @@ function App() {
   }
 
   const handleSync = async () => {
-    if (!currentUser) return alert("Please log in first")
+    if (!currentUser) return alert('Please log in first')
     setIsSyncing(true)
     try {
       await syncMessages(currentUser)
-      await fetchMessages() // Refresh list
+      await fetchMessages()
     } catch (e) {
-      alert("Error syncing: " + e.message)
+      alert('Error syncing: ' + e.message)
     } finally {
       setIsSyncing(false)
     }
   }
 
+  // Helper counts
+  const highCount = messages.filter(m => m.priority?.toLowerCase() === 'high').length
+  const categories = [...new Set(messages.map(m => m.category).filter(Boolean))].length
+  const userInitial = currentUser ? currentUser.charAt(0).toUpperCase() : '?'
+
   // ---- Login Screen ----
   if (!isLogged) {
     return (
       <div className="auth-container">
+        {/* Animated gradient orbs */}
+        <div className="auth-orb orb-1" />
+        <div className="auth-orb orb-2" />
+        <div className="auth-orb orb-3" />
         <div className="auth-card">
-          <h1>Unified Opportunity Inbox</h1>
-          <p>Connect your email to let AI automatically sort, summarize, and highlight opportunities.</p>
+          <div className="auth-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </div>
+          <h1>Unified Inbox</h1>
+          <p className="auth-subtitle">
+            Your AI-powered mail agent that sorts, summarizes,<br />
+            and highlights opportunities automatically.
+          </p>
           <button className="login-btn" onClick={loginWithGoogle}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -69,55 +83,140 @@ function App() {
   return (
     <div className="app-container">
 
+      {/* Mobile Hamburger */}
+      <button
+        className="hamburger-btn"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle sidebar"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          {sidebarOpen ? (
+            <>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </>
+          ) : (
+            <>
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </>
+          )}
+        </svg>
+      </button>
+
+      {/* Mobile Overlay */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* Sidebar */}
-      <div className="sidebar">
-        <h2 style={{ fontSize: '18px', marginBottom: '32px' }}>unified.inbox</h2>
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-brand">
+          <div className="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </div>
+          <span>unified.inbox</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button className="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            Dashboard
+          </button>
+          <button className="nav-item" onClick={handleSync} disabled={isSyncing}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            All Messages
+          </button>
+        </nav>
+
         <button
-          className="sync-btn"
+          className={`sync-btn ${isSyncing ? 'syncing' : ''}`}
           onClick={handleSync}
           disabled={isSyncing}
         >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+          </svg>
           {isSyncing ? 'Syncing...' : 'Sync New Emails'}
         </button>
 
-        <div style={{ marginTop: 'auto', fontSize: '12px', color: 'var(--text-muted)' }}>
-          Connected: {currentUser}
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <div className="user-avatar">{userInitial}</div>
+            <div>
+              <div className="user-email">
+                <span className="status-dot" />
+                {currentUser}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="main-content">
         {/* Header */}
         <div className="header">
-          <div style={{ fontWeight: 600 }}>Opportunity Dashboard</div>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-            {messages.length} total processed
+          <div className="header-title">Opportunity Dashboard</div>
+          <div className="header-stats">
+            <div className="stat-pill">
+              <span className="stat-count">{messages.length}</span> emails
+            </div>
+            <div className="stat-pill high">
+              <span className="stat-count">{highCount}</span> urgent
+            </div>
+            <div className="stat-pill">
+              <span className="stat-count">{categories}</span> categories
+            </div>
           </div>
         </div>
 
         <div className="content-area">
-          {/* List View */}
+          {/* Message List */}
           <div className="message-list">
             {messages.map(msg => (
               <div
                 key={msg.id}
                 className={`message-item ${selectedMsg?.id === msg.id ? 'active' : ''}`}
-                onClick={() => setSelectedMsg(msg)}
+                onClick={() => {
+                  setSelectedMsg(msg)
+                  setSidebarOpen(false)
+                }}
               >
                 <div className="message-header">
-                  <span className="sender-name">{msg.sender.split('<')[0]}</span>
+                  <span className="sender-name">{msg.sender.split('<')[0].trim()}</span>
                   <span className={`badge priority-${msg.priority?.toLowerCase() || 'low'}`}>
                     {msg.priority || 'low'}
                   </span>
                 </div>
                 <div className="message-subject">{msg.subject}</div>
-                <div>
+                <div className="message-badges">
                   <span className="badge category-badge">{msg.category || 'info'}</span>
                 </div>
               </div>
             ))}
             {messages.length === 0 && (
-              <div className="empty-state" style={{ padding: '40px' }}>
-                <p>No messages yet. Click Sync.</p>
+              <div className="empty-state">
+                <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                <p>No messages yet. Click <strong>Sync New Emails</strong> to get started.</p>
               </div>
             )}
           </div>
@@ -126,6 +225,13 @@ function App() {
           <div className="message-detail">
             {selectedMsg ? (
               <>
+                <button className="back-btn" onClick={() => setSelectedMsg(null)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Back to list
+                </button>
+
                 <div className="detail-header">
                   <h1 className="detail-subject">{selectedMsg.subject}</h1>
                   <div className="detail-meta">
@@ -141,10 +247,17 @@ function App() {
                     </svg>
                     AI Summary
                   </h3>
-                  <p>{selectedMsg.summary || "No summary available."}</p>
+                  <p>{selectedMsg.summary || 'No summary available.'}</p>
                 </div>
 
-                {selectedMsg.metadata_json && selectedMsg.metadata_json !== "{}" && selectedMsg.metadata_json !== "null" && (
+                {selectedMsg.action_required && selectedMsg.action_required !== 'None' && (
+                  <div className="action-highlight">
+                    <h4>⚡ Action Required</h4>
+                    <p>{selectedMsg.action_required}</p>
+                  </div>
+                )}
+
+                {selectedMsg.metadata_json && selectedMsg.metadata_json !== '{}' && selectedMsg.metadata_json !== 'null' && (
                   <div className="metadata-grid">
                     {Object.entries(JSON.parse(selectedMsg.metadata_json)).map(([key, val]) => (
                       <div key={key} className="metadata-item">
@@ -155,24 +268,17 @@ function App() {
                   </div>
                 )}
 
-                {selectedMsg.action_required && selectedMsg.action_required !== "None" && (
-                  <div className="action-highlight">
-                    <h4>Action Required</h4>
-                    <p>{selectedMsg.action_required}</p>
-                  </div>
-                )}
-
                 <div className="raw-body">
-                  <div style={{ marginBottom: '16px', fontWeight: 600, color: 'var(--text-main)' }}>Original Message</div>
+                  <div className="raw-body-title">Original Message</div>
                   {selectedMsg.body}
                 </div>
               </>
             ) : (
               <div className="empty-state">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <p>Select a message to view details</p>
+                <p>Select a message to view its AI-powered analysis</p>
               </div>
             )}
           </div>
