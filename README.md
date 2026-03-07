@@ -1,7 +1,9 @@
-# Unified Inbox - AI Mail Sorting Agent
+# InboxIQ- AI Mail Sorting Agent
 
 ## Project Overview
 Unified Inbox is a software product that automatically reads unread emails, uses a Large Language Model (Gemini 2.0 Flash) to evaluate their priority (e.g., flagging interviews as "High"), extracts dynamic structured metadata (like interview dates or topics), and saves them into a relational database.
+
+Note: This project requires Google OAuth and Gmail API credentials to run. Due to Gmail API access restrictions, external reviewers cannot see the full functionality (email syncing, categorization, metadata extraction) without setting up their own Google Cloud credentials. However, if someone like to validate the system, they can provide their email ID and I can add it to the console—you'll then be able to see the real‑time categorization and metadata extraction flow in action.
 
 ## System Architecture
 
@@ -85,3 +87,4 @@ Developers often automate emails using no-code tools like Zapier to forward summ
 - **True Agentic Control (Data Sovereignty):** Zapier workflows are linear and lock the data within third-party webhook ecosystems. By building a custom graph with LangGraph and executing it against our own database, we own the state. Our data model (`Message` and `GoogleAccount`) allows us to train future models or build arbitrary frontends, which is impossible if the data simply flashes across a Slack webhook.
 - **Relational Complexity:** Zapier struggles with many-to-many relationships or complex dynamic metadata extraction that needs to be relationally mapped to an end-user. Our `metadata_json` schema inherently allows relational querying and strict data bounding.
 - **Extensibility & Security:** A custom FastAPI/Flask backend means we can implement our own strict OAuth flows and role-based access controls. We don't have to give a third-party workflow tool God-mode access to users' inboxes; instead, we programmatically request only the exact `gmail.readonly` scopes we restrict ourselves to.
+
